@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import emailjs from "emailjs-com";
-require('dotenv').config();
 
 // Simple emoji icons
 const Airplane = ({ className = "" }) => <span className={`${className} inline-block text-xl`} role="img">✈️</span>;
@@ -19,43 +18,90 @@ export default function App() {
   const [isOpen, setIsOpen] = useState(false);
   const [head, setHead] = useState("");
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
+  const [errors, setErrors] = useState({});
 
-  const services = [
-    { id: "flight", title: "Flight Bookings", desc: "Submit your flight booking queries and we'll arrange tickets.", icon: <Airplane className="w-6 h-6" /> },
-    { id: "train", title: "Train Bookings", desc: "Submit your train travel details (date, from, to, class) and we'll arrange the tickets.", icon: <MapPin className="w-6 h-6" /> },
-    { id: "bus", title: "Bus Bookings", desc: "We handle your bus ticket queries.", icon: <Bus className="w-6 h-6" /> },
-    { id: "insurance", title: "Insurance (Car / Two Wheeler / Health)", desc: "We assist with insurance-related queries.", icon: <ShieldCheck className="w-6 h-6" /> },
-    { id: "passport", title: "Passport Services", desc: "We guide and assist you with passport application queries.", icon: <FileText className="w-6 h-6" /> },
-    { id: "pan", title: "PAN Card Services", desc: "Help with new PAN applications, corrections, or related support.", icon: <CreditCard className="w-6 h-6" /> },
-    { id: "money", title: "Money Transfer", desc: "Send and receive money safely with our assistance.", icon: <Zap className="w-6 h-6" /> },
-    { id: "bills", title: "Utility & Bill Payments", desc: "Electricity bills, credit card bills, and other utility payments handled for you.", icon: <CreditCard className="w-6 h-6" /> },
-    { id: "kyc", title: "Paytm KYC Assistance", desc: "Get help completing or updating your Paytm KYC quickly.", icon: <FileText className="w-6 h-6" /> },
+  // ✅ Grouped services
+  const groupedServices = [
+    {
+      category: "Travel Services",
+      items: [
+        { id: "flight", title: "Flight Bookings", desc: "Submit your flight booking queries and we'll arrange tickets.", icon: <Airplane className="w-6 h-6" /> },
+        { id: "train", title: "Train Bookings", desc: "Submit your train travel details (date, from, to, class) and we'll arrange the tickets.", icon: <MapPin className="w-6 h-6" /> },
+        { id: "bus", title: "Bus Bookings", desc: "We handle your bus ticket queries.", icon: <Bus className="w-6 h-6" /> },
+        { id: "visa", title: "Visa Services", desc: "We assist with visa application and documentation for travel abroad.", icon: <FileText className="w-6 h-6" /> },
+      ],
+    },
+    {
+      category: "Documents & Other Services",
+      items: [
+        { id: "insurance", title: "Insurance (Car / Two Wheeler / Health)", desc: "We assist with insurance-related queries.", icon: <ShieldCheck className="w-6 h-6" /> },
+        { id: "passport", title: "Passport Services", desc: "We guide and assist you with passport application queries.", icon: <FileText className="w-6 h-6" /> },
+        { id: "pan", title: "PAN Card Services", desc: "Help with new PAN applications, corrections, or related support.", icon: <CreditCard className="w-6 h-6" /> },
+        { id: "money", title: "Money Transfer", desc: "Send and receive money safely with our assistance.", icon: <Zap className="w-6 h-6" /> },
+        { id: "bills", title: "Utility & Bill Payments", desc: "Electricity bills, credit card bills, and other utility payments handled for you.", icon: <CreditCard className="w-6 h-6" /> },
+        { id: "kyc", title: "Paytm KYC Assistance", desc: "Get help completing or updating your Paytm KYC quickly.", icon: <FileText className="w-6 h-6" /> },
+        { id: "fastag", title: "FASTag Services", desc: "Apply for new FASTag or recharge existing FASTag easily.", icon: <CreditCard className="w-6 h-6" /> },
+        { id: "lifeCertificate", title: "Life Certificate (Jeevan Pramaan)", desc: "Get assistance in generating Digital Life Certificate for pensioners.", icon: <ShieldCheck className="w-6 h-6" /> },
+        { id: "voterId", title: "Voter ID Services", desc: "Apply for new Voter ID or request corrections in existing Voter ID.", icon: <FileText className="w-6 h-6" /> },
+        { id: "dl", title: "Driving Licence Services", desc: "Apply for new Driving Licence or renew an existing one.", icon: <FileText className="w-6 h-6" /> },
+      ],
+    },
   ];
 
   function openForm(selectedHead = "") { setHead(selectedHead); setIsOpen(true); }
   function closeForm() { setIsOpen(false); setHead(""); setForm({ name: "", email: "", phone: "", message: "" }); }
   function handleChange(e) { const { name, value } = e.target; setForm((s) => ({ ...s, [name]: value })); }
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    const templateParams = {
-      head,
-      name: form.name,
-      email: form.email,
-      phone: form.phone,
-      message: form.message,
-    };
+  function validateForm() {
+  let newErrors = {};
 
-    emailjs.send(process.env.SERVICE_ID, process.env.TEMPLATE_ID, templateParams, process.env.SERVICE_ID)
-      .then(() => {
-        alert("Thanks! Your query was submitted. We'll contact you soon.");
-        closeForm();
-      })
-      .catch((error) => {
-        console.error("EmailJS Error:", error);
-        alert("Sorry, something went wrong. Please try again.");
-      });
+  // Name: only alphabets and spaces
+  if (!/^[A-Za-z\s]{2,}$/.test(form.name.trim())) {
+    newErrors.name = "Please enter a valid name (letters only).";
   }
+
+  // Phone: 10–15 digits
+  if (!/^\d{10,15}$/.test(form.phone.trim())) {
+    newErrors.phone = "Please enter a valid phone number (10–15 digits).";
+  }
+
+  // Message: optional but at least 5 characters if filled
+  if (form.message.trim() && form.message.trim().length < 5) {
+    newErrors.message = "Message must be at least 5 characters.";
+  }
+
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0; // ✅ valid if no errors
+}
+  function handleSubmit(e) {
+  e.preventDefault();
+
+  if (!validateForm()) return; // stop submission if errors exist
+
+  const templateParams = {
+    head,
+    name: form.name,
+    email: form.email,
+    phone: form.phone,
+    message: form.message,
+  };
+
+  emailjs.send(
+    import.meta.env.VITE_SERVICE_ID,
+    import.meta.env.VITE_TEMPLATE_ID,
+    templateParams,
+    import.meta.env.VITE_PUBLIC_KEY
+  )
+    .then(() => {
+      alert("Thanks! Your query was submitted. We'll contact you soon.");
+      closeForm();
+    })
+    .catch((error) => {
+      console.error("EmailJS Error:", error);
+      alert("Sorry, something went wrong. Please try again.");
+    });
+}
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 text-slate-900">
@@ -90,30 +136,37 @@ export default function App() {
           </motion.div>
         </section>
 
+        {/* ✅ Services Section */}
         <section id="services" className="mt-12">
           <h2 className="text-2xl font-bold">Services we provide</h2>
           <p className="text-slate-600 mt-2">Click any service to learn more — use the single query form to submit your request.</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            {services.map((s) => (
-              <motion.article key={s.id} whileHover={{ y: -6 }} className="bg-white p-6 rounded-2xl shadow flex gap-4 items-start">
-                <div className="p-3 rounded-lg bg-indigo-50 text-indigo-700">{s.icon}</div>
-                <div className="flex-1">
-                  <h4 className="font-semibold">{s.title}</h4>
-                  <p className="text-slate-600 text-sm mt-2">{s.desc}</p>
-                  <div className="mt-4 flex gap-3">
-                    <button onClick={() => openForm(s.title)} className="text-indigo-600 underline text-sm">Submit a query for this</button>
-                  </div>
-                </div>
-              </motion.article>
-            ))}
-          </div>
+
+          {groupedServices.map((group) => (
+            <div key={group.category} className="mt-8">
+              <h3 className="text-xl font-semibold mb-4">{group.category}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {group.items.map((s) => (
+                  <motion.article key={s.id} whileHover={{ y: -6 }} className="bg-white p-6 rounded-2xl shadow flex gap-4 items-start">
+                    <div className="p-3 rounded-lg bg-indigo-50 text-indigo-700">{s.icon}</div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold">{s.title}</h4>
+                      <p className="text-slate-600 text-sm mt-2">{s.desc}</p>
+                      <div className="mt-4 flex gap-3">
+                        <button onClick={() => openForm(s.title)} className="text-indigo-600 underline text-sm">Submit a query for this</button>
+                      </div>
+                    </div>
+                  </motion.article>
+                ))}
+              </div>
+            </div>
+          ))}
         </section>
 
         <section id="contact" className="mt-12 bg-white p-6 rounded-2xl shadow">
           <h3 className="text-2xl font-bold">Contact Us</h3>
           <p className="text-slate-600 mt-2">Get in touch with us for queries and assistance:</p>
           <div className="mt-4 space-y-2 text-slate-700">
-            <p><MapPin className="inline-block mr-2" /> Aakash Plaza, 84 A/G‑17, Main Road, Rajendra Nagar Sector 5, Sahibabad, Ghaziabad, Uttar Pradesh 201005, India</p>
+            <p><MapPin className="inline-block mr-2" /> Aakash Plaza, 84 A/G-17, Main Road, Rajendra Nagar Sector 5, Sahibabad, Ghaziabad, Uttar Pradesh 201005, India</p>
             <p><Phone className="inline-block mr-2" /> <a href="tel:+919971890101" className="text-indigo-600">+91 99718 90101</a></p>
             <p><Mail className="inline-block mr-2" /> <a href="mailto:coscotravels@gmail.com" className="text-indigo-600">coscotravels@gmail.com</a></p>
           </div>
@@ -133,39 +186,112 @@ export default function App() {
           © {new Date().getFullYear()} Cospotravels | All rights reserved
         </footer>
       </main>
-
+      
       {/* Modal */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={closeForm}></div>
-          <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.18 }} className="relative bg-white max-w-xl w-full rounded-2xl p-6 shadow-xl mx-4">
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.18 }}
+            className="relative bg-white max-w-xl w-full rounded-2xl p-6 shadow-xl mx-4"
+          >
             <div className="flex items-start justify-between">
               <div>
                 <h4 className="font-bold">Submit your query</h4>
                 <div className="text-slate-500 text-sm mt-1">Head: {head || "Select a head"}</div>
               </div>
-              <button onClick={closeForm} className="p-2 rounded-full hover:bg-slate-100"><X className="w-5 h-5" /></button>
+              <button
+                onClick={closeForm}
+                className="p-2 rounded-full hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
+
             <form onSubmit={handleSubmit} className="mt-4 grid grid-cols-1 gap-3">
+              {/* Category Dropdown */}
               <label className="text-sm text-slate-600">What do you need?</label>
-              <select value={head} onChange={(e) => setHead(e.target.value)} className="w-full p-3 border rounded-lg" required>
+              <select
+                value={head}
+                onChange={(e) => setHead(e.target.value)}
+                className="w-full p-3 border rounded-lg"
+                required
+              >
                 <option value="">-- Choose a category --</option>
-                {services.map((s) => (<option key={s.id} value={s.title}>{s.title}</option>))}
+                {groupedServices.map((group) => (
+                  <optgroup key={group.category} label={group.category}>
+                    {group.items.map((s) => (
+                      <option key={s.id} value={s.title}>{s.title}</option>
+                    ))}
+                  </optgroup>
+                ))}
               </select>
-              <input name="name" value={form.name} onChange={handleChange} placeholder="Your name" className="w-full p-3 border rounded-lg" required />
+
+              {/* Name */}
+              <input
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                placeholder="Your name"
+                className={`w-full p-3 border rounded-lg ${errors.name ? "border-red-500" : ""}`}
+                required
+              />
+              {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+
+              {/* Email + Phone */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input name="email" value={form.email} onChange={handleChange} placeholder="Email (optional)" className="w-full p-3 border rounded-lg" type="email" />
-                <input name="phone" value={form.phone} onChange={handleChange} placeholder="Phone / WhatsApp number" className="w-full p-3 border rounded-lg" required />
+                <input
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="Email (optional)"
+                  className="w-full p-3 border rounded-lg"
+                  type="email"
+                />
+                <input
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleChange}
+                  placeholder="Phone / WhatsApp number"
+                  className={`w-full p-3 border rounded-lg ${errors.phone ? "border-red-500" : ""}`}
+                  required
+                />
               </div>
-              <textarea name="message" value={form.message} onChange={handleChange} placeholder="Write your query..." className="w-full p-3 border rounded-lg h-28" />
+              {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
+
+              {/* Message */}
+              <textarea
+                name="message"
+                value={form.message}
+                onChange={handleChange}
+                placeholder="Write your query..."
+                className={`w-full p-3 border rounded-lg h-28 ${errors.message ? "border-red-500" : ""}`}
+              />
+              {errors.message && <p className="text-red-500 text-sm">{errors.message}</p>}
+
+              {/* Buttons */}
               <div className="flex justify-end gap-3 mt-2">
-                <button type="button" onClick={closeForm} className="px-4 py-2 rounded-lg border">Cancel</button>
-                <button type="submit" className="px-4 py-2 rounded-lg bg-indigo-600 text-white">Submit Query</button>
+                <button
+                  type="button"
+                  onClick={closeForm}
+                  className="px-4 py-2 rounded-lg border"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white"
+                >
+                  Submit Query
+                </button>
               </div>
             </form>
           </motion.div>
         </div>
       )}
+
     </div>
   );
 }
