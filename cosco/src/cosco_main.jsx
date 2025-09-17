@@ -87,10 +87,10 @@ export default function App() {
   };
 
   emailjs.send(
-    import.meta.env.VITE_SERVICE_ID,
-    import.meta.env.VITE_TEMPLATE_ID,
+    "service_186y4aa",
+    "template_wmxkpi7",
     templateParams,
-    import.meta.env.VITE_PUBLIC_KEY
+    "UG03rybCsybl_73CL"
   )
     .then(() => {
       alert("Thanks! Your query was submitted. We'll contact you soon.");
@@ -183,7 +183,7 @@ export default function App() {
         </section>
 
         <footer className="mt-12 text-center text-slate-500 text-sm">
-          © {new Date().getFullYear()} Cospotravels | All rights reserved
+          © {new Date().getFullYear()} CoscoTravels | All rights reserved
         </footer>
       </main>
       
