@@ -53,55 +53,44 @@ export default function App() {
   function handleChange(e) { const { name, value } = e.target; setForm((s) => ({ ...s, [name]: value })); }
 
   function validateForm() {
-  let newErrors = {};
+    let newErrors = {};
 
-  // Name: only alphabets and spaces
-  if (!/^[A-Za-z\s]{2,}$/.test(form.name.trim())) {
-    newErrors.name = "Please enter a valid name (letters only).";
+    if (!/^[A-Za-z\s]{2,}$/.test(form.name.trim())) {
+      newErrors.name = "Please enter a valid name (letters only).";
+    }
+    if (!/^\d{10,15}$/.test(form.phone.trim())) {
+      newErrors.phone = "Please enter a valid phone number (10–15 digits).";
+    }
+    if (form.message.trim() && form.message.trim().length < 5) {
+      newErrors.message = "Message must be at least 5 characters.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   }
 
-  // Phone: 10–15 digits
-  if (!/^\d{10,15}$/.test(form.phone.trim())) {
-    newErrors.phone = "Please enter a valid phone number (10–15 digits).";
-  }
-
-  // Message: optional but at least 5 characters if filled
-  if (form.message.trim() && form.message.trim().length < 5) {
-    newErrors.message = "Message must be at least 5 characters.";
-  }
-
-  setErrors(newErrors);
-  return Object.keys(newErrors).length === 0; // ✅ valid if no errors
-}
   function handleSubmit(e) {
-  e.preventDefault();
+    e.preventDefault();
+    if (!validateForm()) return;
 
-  if (!validateForm()) return; // stop submission if errors exist
+    const templateParams = {
+      head,
+      name: form.name,
+      email: form.email,
+      phone: form.phone,
+      message: form.message,
+    };
 
-  const templateParams = {
-    head,
-    name: form.name,
-    email: form.email,
-    phone: form.phone,
-    message: form.message,
-  };
-
-  emailjs.send(
-    "service_186y4aa",
-    "template_wmxkpi7",
-    templateParams,
-    "UG03rybCsybl_73CL"
-  )
-    .then(() => {
-      alert("Thanks! Your query was submitted. We'll contact you soon.");
-      closeForm();
-    })
-    .catch((error) => {
-      console.error("EmailJS Error:", error);
-      alert("Sorry, something went wrong. Please try again.");
-    });
-}
-
+    emailjs.send("service_186y4aa", "template_wmxkpi7", templateParams, "UG03rybCsybl_73CL")
+      .then(() => {
+        alert("Thanks! Your query was submitted. We'll contact you soon.");
+        closeForm();
+      })
+      .catch((error) => {
+        console.error("EmailJS Error:", error);
+        alert("Sorry, something went wrong. Please try again.");
+      });
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 text-slate-900">
@@ -111,7 +100,12 @@ export default function App() {
           <div className="text-sm text-slate-600">We make travel & documents simple.</div>
         </div>
         <div className="flex items-center gap-4">
-          <button onClick={() => openForm("")} className="bg-indigo-600 text-white px-4 py-2 rounded-xl shadow-lg hover:shadow-2xl">Send a Query</button>
+          <button
+            onClick={() => openForm("")}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
+          >
+            Send a Query
+          </button>
         </div>
       </header>
 
@@ -121,8 +115,18 @@ export default function App() {
             <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">Cosco travels</h1>
             <p className="mt-4 text-lg text-slate-600">You send us a travel or document query — we handle booking & paperwork for you.</p>
             <div className="mt-6 flex gap-3">
-              <button onClick={() => openForm("general")} className="bg-indigo-600 text-white px-4 py-2 rounded-lg">Submit a Query</button>
-              <a href="#services" className="px-4 py-2 rounded-lg border border-slate-200">Our Services</a>
+              <button
+                onClick={() => openForm("general")}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
+              >
+                Submit a Query
+              </button>
+              <a
+                href="#services"
+                className="px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-100 hover:scale-105 transition-all duration-200"
+              >
+                Our Services
+              </a>
             </div>
           </motion.div>
 
@@ -146,13 +150,25 @@ export default function App() {
               <h3 className="text-xl font-semibold mb-4">{group.category}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {group.items.map((s) => (
-                  <motion.article key={s.id} whileHover={{ y: -6 }} className="bg-white p-6 rounded-2xl shadow flex gap-4 items-start">
-                    <div className="p-3 rounded-lg bg-indigo-50 text-indigo-700">{s.icon}</div>
+                  <motion.article
+                    key={s.id}
+                    whileHover={{ y: -6, scale: 1.03 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 12 }}
+                    className="group bg-white p-6 rounded-2xl shadow flex gap-4 items-start hover:shadow-xl hover:border hover:border-indigo-100 transition-all duration-200"
+                  >
+                    <div className="p-3 rounded-lg bg-indigo-50 text-indigo-700 transition-transform duration-200 group-hover:rotate-6 group-hover:scale-110">
+                      {s.icon}
+                    </div>
                     <div className="flex-1">
                       <h4 className="font-semibold">{s.title}</h4>
                       <p className="text-slate-600 text-sm mt-2">{s.desc}</p>
                       <div className="mt-4 flex gap-3">
-                        <button onClick={() => openForm(s.title)} className="text-indigo-600 underline text-sm">Submit a query for this</button>
+                        <button
+                          onClick={() => openForm(s.title)}
+                          className="text-indigo-600 underline text-sm hover:text-indigo-800 transition-colors"
+                        >
+                          Submit a query for this
+                        </button>
                       </div>
                     </div>
                   </motion.article>
@@ -167,8 +183,8 @@ export default function App() {
           <p className="text-slate-600 mt-2">Get in touch with us for queries and assistance:</p>
           <div className="mt-4 space-y-2 text-slate-700">
             <p><MapPin className="inline-block mr-2" /> Aakash Plaza, 84 A/G-17, Main Road, Rajendra Nagar Sector 5, Sahibabad, Ghaziabad, Uttar Pradesh 201005, India</p>
-            <p><Phone className="inline-block mr-2" /> <a href="tel:+919971890101" className="text-indigo-600">+91 99718 90101</a></p>
-            <p><Mail className="inline-block mr-2" /> <a href="mailto:coscotravels@gmail.com" className="text-indigo-600">coscotravels@gmail.com</a></p>
+            <p><Phone className="inline-block mr-2" /> <a href="tel:+919971890101" className="text-indigo-600 hover:underline">+91 99718 90101</a></p>
+            <p><Mail className="inline-block mr-2" /> <a href="mailto:coscotravels@gmail.com" className="text-indigo-600 hover:underline">coscotravels@gmail.com</a></p>
           </div>
 
           <div className="mt-6 rounded-2xl overflow-hidden shadow-lg h-96">
@@ -211,12 +227,11 @@ export default function App() {
             </div>
 
             <form onSubmit={handleSubmit} className="mt-4 grid grid-cols-1 gap-3">
-              {/* Category Dropdown */}
               <label className="text-sm text-slate-600">What do you need?</label>
               <select
                 value={head}
                 onChange={(e) => setHead(e.target.value)}
-                className="w-full p-3 border rounded-lg"
+                className="w-full p-3 border rounded-lg hover:border-indigo-400 transition-colors"
                 required
               >
                 <option value="">-- Choose a category --</option>
@@ -229,25 +244,23 @@ export default function App() {
                 ))}
               </select>
 
-              {/* Name */}
               <input
                 name="name"
                 value={form.name}
                 onChange={handleChange}
                 placeholder="Your name"
-                className={`w-full p-3 border rounded-lg ${errors.name ? "border-red-500" : ""}`}
+                className={`w-full p-3 border rounded-lg hover:border-indigo-400 transition-colors ${errors.name ? "border-red-500" : ""}`}
                 required
               />
               {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
 
-              {/* Email + Phone */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <input
                   name="email"
                   value={form.email}
                   onChange={handleChange}
                   placeholder="Email (optional)"
-                  className="w-full p-3 border rounded-lg"
+                  className="w-full p-3 border rounded-lg hover:border-indigo-400 transition-colors"
                   type="email"
                 />
                 <input
@@ -255,34 +268,32 @@ export default function App() {
                   value={form.phone}
                   onChange={handleChange}
                   placeholder="Phone / WhatsApp number"
-                  className={`w-full p-3 border rounded-lg ${errors.phone ? "border-red-500" : ""}`}
+                  className={`w-full p-3 border rounded-lg hover:border-indigo-400 transition-colors ${errors.phone ? "border-red-500" : ""}`}
                   required
                 />
               </div>
               {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
 
-              {/* Message */}
               <textarea
                 name="message"
                 value={form.message}
                 onChange={handleChange}
                 placeholder="Write your query..."
-                className={`w-full p-3 border rounded-lg h-28 ${errors.message ? "border-red-500" : ""}`}
+                className={`w-full p-3 border rounded-lg h-28 hover:border-indigo-400 transition-colors ${errors.message ? "border-red-500" : ""}`}
               />
               {errors.message && <p className="text-red-500 text-sm">{errors.message}</p>}
 
-              {/* Buttons */}
               <div className="flex justify-end gap-3 mt-2">
                 <button
                   type="button"
                   onClick={closeForm}
-                  className="px-4 py-2 rounded-lg border"
+                  className="px-4 py-2 rounded-lg border hover:bg-slate-100 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white"
+                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
                 >
                   Submit Query
                 </button>
@@ -291,7 +302,6 @@ export default function App() {
           </motion.div>
         </div>
       )}
-
     </div>
   );
 }
